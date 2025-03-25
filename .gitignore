@@ -1,8 +1,8 @@
 
 # Playwright
 node_modules/
-/playwright-report/
 /blob-report/
 /playwright/.cache/
 
-auth.js
+data/auth.js
+tests/uiE2E.spec.js

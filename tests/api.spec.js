@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { faker } from '@faker-js/faker' //generates random data
-import { API_KEY, API_TOKEN } from '../auth';
-import { boardId, progressListId, testListId, cardNames, testCardId } from '../elementIDs';
+import { API_KEY, API_TOKEN } from '../data/auth';
+import { boardId, progressListId, testListId, cardNames, testCardId } from '../data/elementIDs';
 
 const ROUTE = 'https://api.trello.com/1'
 
@@ -10,46 +10,68 @@ const listName =  `test-${timestamp}`
 
 
 test.describe('List API tests', async() => {
-  test('Create new list to pre-existing board and archive it', async({request}) => {
-      const newList = await request.post(ROUTE+'/lists', {
-          params: {
-          'name': listName,
-          'idBoard': boardId,
-          'key':API_KEY,
-          'token':API_TOKEN
-  }})
-      const newListBody = await newList.json()
-  
-      expect(newList.ok()).toBeTruthy()
-      expect(newListBody.name).toBe(listName)
+    test('Get cards from the first list in a board', async({request}) => {
+        //get all list from the main board
+        const listsInBoard = await request.get(ROUTE+`/boards/${boardId}/lists`, {
+            params: {
+                'key': API_KEY,
+                'token':API_TOKEN
+            }
+        })
+        const lists = await listsInBoard.json()
 
-      //remove
-      const archiveList = await request.put(ROUTE+`/lists/${newListBody.id}/closed`, {
-          params: {
-              'key':API_KEY,
-              'token':API_TOKEN,
-              'value': true
-          }
-      })
+        //use the first list object 
+        const cardsinList = await request.get(ROUTE+`/lists/${lists[0].id}/cards`, {
+            params: {
+                'key': API_KEY,
+                'token':API_TOKEN
+            }
+        })
 
-      expect(archiveList.ok()).toBeTruthy()
-  })
+        expect(cardsinList.ok()).toBeTruthy()
+    })
+
+    test('Create new list to pre-existing board and archive it', async({request}) => {
+        const newList = await request.post(ROUTE+'/lists', {
+            params: {
+            'name': listName,
+            'idBoard': boardId,
+            'key':API_KEY,
+            'token':API_TOKEN
+            }})
+        const newListBody = await newList.json()
+    
+        expect(newList.ok()).toBeTruthy()
+        expect(newListBody.name).toBe(listName)
+
+        //remove
+        const archiveList = await request.put(ROUTE+`/lists/${newListBody.id}/closed`, {
+            params: {
+                'key':API_KEY,
+                'token':API_TOKEN,
+                'value': true
+            }
+        })
+
+        expect(archiveList.ok()).toBeTruthy()
+    })
 })
 
 
 test.describe('Card API tests', async() => {
   let createCardBody
 
-  test('Get cards for a list', async({request}) => {
-      const getCards = await request.get(ROUTE+`/lists/${progressListId}/cards`, {
+  test('Get board card is in', async({request}) => {
+      const getBoard = await request.get(ROUTE+`/cards/${testCardId}/board`, {
           params: {
               'key':API_KEY,
               'token':API_TOKEN
           }
       })
-
-      console.log(await getCards.json())
-      expect(getCards.ok()).toBeTruthy()
+      const getBoardBody = await getBoard.json()
+      
+      expect(getBoard.ok()).toBeTruthy()
+      expect(getBoardBody.name).toBe('First board')
   })
 
   test('Create and delete new card', async({request}) => {
